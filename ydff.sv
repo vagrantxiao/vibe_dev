@@ -12,14 +12,14 @@ ydff #(
 */
 
 module ydff #(
-      parameter DATA_WIDTH = 8
-    , parameter INIT       = 0
+      parameter DATAWIDTH = 8
+    , parameter INIT      = 0
 )(
-      output reg   [DATA_WIDTH-1:0] dout
-    , input  wire                   clk 
-    , input  wire                   rst_n
-    , input  wire  [DATA_WIDTH-1:0] din
-    , input  wire                   en
+      output reg   [DATAWIDTH-1:0] dout
+    , input  wire                  clk 
+    , input  wire                  rst_n
+    , input  wire  [DATAWIDTH-1:0] din
+    , input  wire                  en
 );
 
 always@(posedge clk)begin
