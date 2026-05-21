@@ -93,10 +93,15 @@ module async_fifo#(
   end
 
   // -------------------------------------------------------
-  // Stubs (replaced in later milestones)
+  // Empty flag (read clock domain)
+  // FIFO is empty when read Gray pointer == synced write Gray pointer
+  // -------------------------------------------------------
+  assign empty = (rptr_g == wptr_g_sync);
+
+  // -------------------------------------------------------
+  // Stub (replaced in Milestone 5)
   // -------------------------------------------------------
   assign full  = 1'b0;
-  assign empty = 1'b1;
 
 endmodule
         

@@ -169,9 +169,10 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 - Added 2-FF synchronizer for `rptr_g → wclk` domain → `rptr_g_sync`
 - **Result**: Vivado elaborates clean; all 2000 items sent; `rcvd_count == 0` expected (`empty` stub still `1`)
 
-### Milestone 4 — Empty Flag
-- Implement `empty = (rptr_g == wptr_g_sync)` in the read clock domain
-- **Acceptance**: `make all` — simulation shows `empty` deasserts after first write and reasserts after last read
+### ✅ Milestone 4 — Empty Flag *(DONE)*
+- Implemented `empty = (rptr_g == wptr_g_sync)` (combinatorial, read clock domain)
+- Removed `empty` stub
+- **Result**: `make all` — all 2000 items sent and received with correct data; `Test completed successfully!`
 
 ### Milestone 5 — Full Flag
 - Implement `full` in the write clock domain:
