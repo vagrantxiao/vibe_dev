@@ -1,31 +1,31 @@
 module async_fifo#(
-      parameter DATAWIDTH = 8
-    , parameter ADDRWIDTH = 4
+      parameter int DATAWIDTH = 8
+    , parameter int ADDRWIDTH = 4
     )(
-      input                  wclk
-    , input                  wrst_n
-    , input                  wrreq
-    , input [DATAWIDTH-1:0]  data
-    , output                 full
+      input  logic                 wclk
+    , input  logic                 wrst_n
+    , input  logic                 wrreq
+    , input  logic [DATAWIDTH-1:0] data
+    , output logic                 full
 
-    , input                  rclk
-    , input                  rrst_n
-    , input                  rdreq
-    , output [DATAWIDTH-1:0] q
-    , output                 empty
+    , input  logic                 rclk
+    , input  logic                 rrst_n
+    , input  logic                 rdreq
+    , output logic [DATAWIDTH-1:0] q
+    , output logic                 empty
 );
 
   // -------------------------------------------------------
   // Dual-port memory
   // -------------------------------------------------------
-  reg [DATAWIDTH-1:0] mem [0:2**ADDRWIDTH-1];
+  logic [DATAWIDTH-1:0] mem [2**ADDRWIDTH];
 
   // -------------------------------------------------------
   // Write pointer (ADDRWIDTH+1 bits, MSB = wrap bit)
   // -------------------------------------------------------
-  reg [ADDRWIDTH:0] wptr;
+  logic [ADDRWIDTH:0] wptr;
 
-  always @(posedge wclk or negedge wrst_n) begin
+  always_ff @(posedge wclk or negedge wrst_n) begin
     if (!wrst_n)
       wptr <= '0;
     else if (wrreq && !full)
@@ -33,7 +33,7 @@ module async_fifo#(
   end
 
   // Write memory on every accepted write
-  always @(posedge wclk) begin
+  always_ff @(posedge wclk) begin
     if (wrreq && !full)
       mem[wptr[ADDRWIDTH-1:0]] <= data;
   end
@@ -41,9 +41,9 @@ module async_fifo#(
   // -------------------------------------------------------
   // Read pointer (ADDRWIDTH+1 bits, MSB = wrap bit)
   // -------------------------------------------------------
-  reg [ADDRWIDTH:0] rptr;
+  logic [ADDRWIDTH:0] rptr;
 
-  always @(posedge rclk or negedge rrst_n) begin
+  always_ff @(posedge rclk or negedge rrst_n) begin
     if (!rrst_n)
       rptr <= '0;
     else if (rdreq && !empty)
