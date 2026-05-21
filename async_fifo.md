@@ -160,6 +160,7 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 - Drive `q = mem[rptr[ADDRWIDTH-1:0]]` combinatorially (FWFT)
 - Kept `full`/`empty` as stubs
 - **Result**: Elaboration clean; `rcvd_count == 0` expected (read side still blocked by `empty` stub)
+- **Refactor**: Updated to proper SystemVerilog style — `logic` instead of `reg`/`wire`, `always_ff` instead of `always`, `parameter int`, typed port declarations
 
 ### Milestone 3 — Gray Code Conversion + 2-FF Synchronizers
 - Add `wptr_g = wptr ^ (wptr >> 1)` (combinatorial)
