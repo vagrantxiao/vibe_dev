@@ -75,7 +75,6 @@ module async_fifo#(
       wptr_g_ff1  <= wptr_g;
       wptr_g_sync <= wptr_g_ff1;
     end
-
   end
 
   // -------------------------------------------------------
@@ -109,5 +108,3 @@ module async_fifo#(
                 (wptr_g[ADDRWIDTH-2:0] == rptr_g_sync[ADDRWIDTH-2:0]);
 
 endmodule
-        
-

@@ -184,8 +184,9 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 - Removed `full` stub
 - **Result**: `make all` — all 2000 items sent and received with correct data; `Test completed successfully!`
 
-### Milestone 6 — Full Regression & Cleanup
-- Run `make all` end-to-end with `ADDRWIDTH=10`, `DATAWIDTH=32`, `TEST_NUM=2000`
-- Confirm: `sent_count == 2000`, `rcvd_count == 2000`, `empty` at end, no data mismatch
-- Review reset behaviour: ensure `wrst_n` and `rrst_n` independently reset their domains
-- **Acceptance**: `$display("Test completed successfully!")` in simulation log
+### ✅ Milestone 6 — Full Regression & Cleanup *(DONE)*
+- Ran `make all` end-to-end with `ADDRWIDTH=10`, `DATAWIDTH=32`, `TEST_NUM=2000`
+- Confirmed: `sent_count == 2000`, `rcvd_count == 2000`, all 2000 data values match, FIFO empty at end
+- Verified reset behaviour: `wrst_n` resets `wptr`, `rptr_g_sync` FF chain; `rrst_n` resets `rptr`, `wptr_g_sync` FF chain — fully independent domains
+- Cleaned up trailing whitespace in `async_fifo.sv`
+- **Result**: `$display("Test completed successfully!")` confirmed in simulation log
