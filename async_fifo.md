@@ -12,41 +12,41 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
         WRITE CLOCK DOMAIN                              READ CLOCK DOMAIN
   ┌──────────────────────────────────┐          ┌──────────────────────────────────┐
   │                                  │          │                                  │
-  │  wrreq ──►┌──────────────────┐  │          │  ┌──────────────────┐◄── rdreq  │
-  │  data  ──►│   Write Pointer  │  │          │  │   Read Pointer   │            │
-  │           │   Counter(wclk)  │  │          │  │   Counter(rclk)  │──► q      │
-  │           └───┬──────────────┘  │          │  └──────────────┬───┘            │
-  │               │ wptr[AW:0]      │          │    rptr[AW:0]   │               │
-  │               │ (binary)        │          │    (binary)     │               │
-  │               │                 │  ┌─────┐ │                 │               │
-  │               ▼                 │  │     │ │                 ▼               │
-  │          ┌──────────┐          │  │  D  │ │         ┌──────────┐            │
-  │          │ Bin→Gray │          │  │  u  │ │         │ Bin→Gray │            │
-  │          └────┬─────┘          │  │  a  │ │         └────┬─────┘            │
-  │               │ wptr_g[AW:0]   │  │  l  │ │  rptr_g[AW:0]│                  │
-  │         ┌─────┤                │  │     │ │              ├──────┐           │
-  │         │     │                │  │  P  │ │              │      │           │
-  │         │     │  ┌─────────────┼──┼─────┼─┼──────────►  │      │           │
-  │         │     │  │ wptr_g      │  │  o  │ │  (2-FF sync  │      │           │
-  │         │     │  │ →rclk dom   │  │  r  │ │   into rclk) │      │           │
-  │         │     │  │             │  │  t  │ │              ▼      │           │
-  │         │     │  │             │  │     │ │        wptr_g_sync   │           │
-  │         │     │  │             │  │  M  │ │              │      │           │
-  │         │     │◄─┼─────────────┼──┼─────┼─┼──────────── │      │           │
-  │         │     │  │ rptr_g      │  │  e  │ │  (2-FF sync  │      │           │
-  │         │     │  │ →wclk dom   │  │  m  │ │   into wclk) │      │           │
-  │         │     │  │             │  │     │ │              │      │           │
-  │         │     ▼  ▼             │  └─────┘ │              ▼      ▼           │
-  │         │  rptr_g_sync         │          │        wptr_g_sync   │           │
-  │         │     │                │          │              │       │           │
-  │         │     ▼                │          │              ▼       │           │
-  │         │  ┌──────────────┐   │          │   ┌──────────────────┐           │
-  │         └─►│  Full Flag   │   │          │   │   Empty Flag     │◄──────────┘
-  │            │  Comparator  │   │          │   │   Comparator     │           │
-  │            └──────┬───────┘   │          │   └────────┬─────────┘           │
-  │                   │           │          │            │                      │
-  │              full ▼           │          │            ▼ empty                │
-  └──────────────────────────────┘          └──────────────────────────────────┘
+  │  wrreq ──►┌──────────────────┐   │          │  ┌──────────────────┐◄── rdreq   │
+  │  data  ──►│   Write Pointer  │   │          │  │   Read Pointer   │            │
+  │           │   Counter(wclk)  │   │          │  │   Counter(rclk)  │──► q       │
+  │           └───┬──────────────┘   │          │  └──────────────┬───┘            │
+  │               │ wptr[AW:0]       │          │    rptr[AW:0]   │                │
+  │               │ (binary)         │          │    (binary)     │                │
+  │               │                  │  ┌─────┐ │                 │                │
+  │               ▼                  │  │     │ │                 ▼                │
+  │          ┌──────────┐            │  │  D  │ │         ┌──────────┐             │
+  │          │ Bin→Gray │            │  │  u  │ │         │ Bin→Gray │             │
+  │          └────┬─────┘            │  │  a  │ │         └────┬─────┘             │
+  │               │ wptr_g[AW:0]     │  │  l  │ │  rptr_g[AW:0]│                   │
+  │         ┌─────┤                  │  │     │ │              ├──────┐            │
+  │         │     │                  │  │  P  │ │              │      │            │
+  │         │     │  ┌───────────────┼──┼─────┼─┼──────────►   │      │            │
+  │         │     │  │ wptr_g        │  │  o  │ │  (2-FF sync  │      │            │
+  │         │     │  │ →rclk dom     │  │  r  │ │   into rclk) │      │            │
+  │         │     │  │               │  │  t  │ │              ▼      │            │
+  │         │     │  │               │  │     │ │        wptr_g_sync  │            │
+  │         │     │  │               │  │  M  │ │              │      │            │
+  │         │     │◄─┼───────────────┼──┼─────┼─┼────────────  │      │            │
+  │         │     │  │ rptr_g        │  │  e  │ │  (2-FF sync  │      │            │
+  │         │     │  │ →wclk dom     │  │  m  │ │   into wclk) │      │            │
+  │         │     │  │               │  │     │ │              │      │            │
+  │         │     ▼  ▼               │  └─────┘ │              ▼      ▼            │
+  │         │  rptr_g_sync           │          │        wptr_g_sync  │            │
+  │         │     │                  │          │              │      │            │
+  │         │     ▼                  │          │              ▼      │            │
+  │         │  ┌──────────────┐      │          │   ┌──────────────────┐           │
+  │         └─►│  Full Flag   │      │          │   │   Empty Flag     │◄──────────┘
+  │            │  Comparator  │      │          │   │   Comparator     │           │
+  │            └──────┬───────┘      │          │   └────────┬─────────┘           │
+  │                   │              │          │            │                     │
+  │              full ▼              │          │            ▼ empty               │
+  └──────────────────────────────────┘          └──────────────────────────────────┘
                   wptr[AW-1:0] ──────────────────────────────► mem write addr
                   rptr[AW-1:0] ──────────────────────────────► mem read addr
 ```
@@ -162,12 +162,12 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 - **Result**: Elaboration clean; `rcvd_count == 0` expected (read side still blocked by `empty` stub)
 - **Refactor**: Updated to proper SystemVerilog style — `logic` instead of `reg`/`wire`, `always_ff` instead of `always`, `parameter int`, typed port declarations
 
-### Milestone 3 — Gray Code Conversion + 2-FF Synchronizers
-- Add `wptr_g = wptr ^ (wptr >> 1)` (combinatorial)
-- Add `rptr_g = rptr ^ (rptr >> 1)` (combinatorial)
-- Add 2-FF synchronizer for `wptr_g → rclk` domain → `wptr_g_sync`
-- Add 2-FF synchronizer for `rptr_g → wclk` domain → `rptr_g_sync`
-- **Acceptance**: Vivado elaborates; signals visible in waveform with correct 2-cycle latency
+### ✅ Milestone 3 — Gray Code Conversion + 2-FF Synchronizers *(DONE)*
+- Added `wptr_g = wptr ^ (wptr >> 1)` (combinatorial)
+- Added `rptr_g = rptr ^ (rptr >> 1)` (combinatorial)
+- Added 2-FF synchronizer for `wptr_g → rclk` domain → `wptr_g_sync`
+- Added 2-FF synchronizer for `rptr_g → wclk` domain → `rptr_g_sync`
+- **Result**: Vivado elaborates clean; all 2000 items sent; `rcvd_count == 0` expected (`empty` stub still `1`)
 
 ### Milestone 4 — Empty Flag
 - Implement `empty = (rptr_g == wptr_g_sync)` in the read clock domain

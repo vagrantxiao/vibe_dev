@@ -54,6 +54,45 @@ module async_fifo#(
   assign q = mem[rptr[ADDRWIDTH-1:0]];
 
   // -------------------------------------------------------
+  // Gray code conversion (combinatorial)
+  // -------------------------------------------------------
+  logic [ADDRWIDTH:0] wptr_g;
+  logic [ADDRWIDTH:0] rptr_g;
+
+  assign wptr_g = wptr ^ (wptr >> 1);
+  assign rptr_g = rptr ^ (rptr >> 1);
+
+  // -------------------------------------------------------
+  // 2-FF synchronizer: wptr_g → rclk domain
+  // -------------------------------------------------------
+  logic [ADDRWIDTH:0] wptr_g_ff1, wptr_g_sync;
+
+  always_ff @(posedge rclk or negedge rrst_n) begin
+    if (!rrst_n) begin
+      wptr_g_ff1  <= '0;
+      wptr_g_sync <= '0;
+    end else begin
+      wptr_g_ff1  <= wptr_g;
+      wptr_g_sync <= wptr_g_ff1;
+    end
+  end
+
+  // -------------------------------------------------------
+  // 2-FF synchronizer: rptr_g → wclk domain
+  // -------------------------------------------------------
+  logic [ADDRWIDTH:0] rptr_g_ff1, rptr_g_sync;
+
+  always_ff @(posedge wclk or negedge wrst_n) begin
+    if (!wrst_n) begin
+      rptr_g_ff1  <= '0;
+      rptr_g_sync <= '0;
+    end else begin
+      rptr_g_ff1  <= rptr_g;
+      rptr_g_sync <= rptr_g_ff1;
+    end
+  end
+
+  // -------------------------------------------------------
   // Stubs (replaced in later milestones)
   // -------------------------------------------------------
   assign full  = 1'b0;
