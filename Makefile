@@ -6,7 +6,7 @@ all:
 git:
 	git add .
 	git commit -m "$(m)"
-	git push origin main
+	git push origin dev/test1
 
 clean:
 	rm -rf build
