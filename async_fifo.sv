@@ -38,6 +38,7 @@ module async_fifo#(
 
 
 logic [DATAWIDTH-1 : 0] mem [(1<<ADDRWIDTH)-1:0];
+logic [DATAWIDTH-1 : 0] mem_reg;
 
 logic [ADDRWIDTH : 0] wwptr_bin;
 logic [ADDRWIDTH : 0] wwptr_gray;
@@ -54,14 +55,9 @@ logic [ADDRWIDTH : 0] rwptr_gray;
 integer ii;
 // write port
 always_ff @ (posedge wclk) begin
-    if(!wrst_n) begin
-        for(ii=0; ii<(1<<ADDRWIDTH); ii = ii+1) begin
-            mem[ii] <= 0;
-        end
-    end else begin
-        if( ~wfull && wpush) begin
-            mem[wwptr_bin[ADDRWIDTH-1:0]] <= wdin;
-        end
+    if( ~wfull && wpush) begin
+        mem[wwptr_bin[ADDRWIDTH-1:0]] <= wdin;
+        mem_reg                       <= wdin;
     end
 end
 

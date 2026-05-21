@@ -12,6 +12,7 @@ logic                 wpush     = 0;
 logic                 rpop      = 0;
 logic [DATAWIDTH-1:0] wdin      = 0;
 
+logic [DATAWIDTH-1:0] din;
 logic                 send_done = 0;
 logic [31:0]          sent_count = 0;
 logic [31:0]          rcvd_count = 0;
@@ -44,15 +45,6 @@ async_fifo#(
     , .rempty    (rempty     )
 );
 
-task automatic send_data(input logic [DATAWIDTH-1:0] din);
-  wait(!wfull);
-  wdin = din;
-  wpush = 1'b1;
-  @(posedge wclk);
-  wpush = 1'b0;
-endtask
-
-
 initial begin
   #100;
   @(posedge wclk);
@@ -81,14 +73,25 @@ initial begin
   $finish();
 end
 
+task automatic send_data(input logic [DATAWIDTH-1:0] din);
+  wait(!wfull);
+  wpush = 1'b1;
+  wdin = din;
+  @(posedge wclk);
+  #1;
+  wpush = 1'b0;
+endtask
+
 initial begin
   wait(wrst_n);
-  @(posedge rclk);
+  #1;
+
   for (int i=0; i<TEST_NUM; i=i+1) begin
-    send_data($urandom);
+    din = $urandom;
+    send_data(din);
     sent_count = sent_count + 1;
-    expected_data.push_back(wdin);
-    $display("Sent data: 0x%08h", wdin);
+    expected_data.push_back(din);
+    $display("Sent data: 0x%08h", din);
   end
   send_done = 1;
 end
@@ -96,8 +99,9 @@ end
 initial begin
   wait(rrst_n);
   forever begin
-    rpop = 1'b0;
     @(posedge rclk);
+    #1;
+    rpop = 1'b0;
     wait(!rempty);
     exp_data = expected_data.pop_front();
     rcvd_count = rcvd_count + 1;
