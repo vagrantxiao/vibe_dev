@@ -174,14 +174,15 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 - Removed `empty` stub
 - **Result**: `make all` — all 2000 items sent and received with correct data; `Test completed successfully!`
 
-### Milestone 5 — Full Flag
-- Implement `full` in the write clock domain:
+### ✅ Milestone 5 — Full Flag *(DONE)*
+- Implemented `full` (combinatorial, write clock domain):
   ```
   full = (wptr_g[AW]     != rptr_g_sync[AW]  ) &
          (wptr_g[AW-1]   != rptr_g_sync[AW-1]) &
          (wptr_g[AW-2:0] == rptr_g_sync[AW-2:0])
   ```
-- **Acceptance**: `make all` — simulation shows `full` asserts when FIFO is filled and deasserts after reads; no data loss or mismatch across all 2000 transfers
+- Removed `full` stub
+- **Result**: `make all` — all 2000 items sent and received with correct data; `Test completed successfully!`
 
 ### Milestone 6 — Full Regression & Cleanup
 - Run `make all` end-to-end with `ADDRWIDTH=10`, `DATAWIDTH=32`, `TEST_NUM=2000`

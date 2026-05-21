@@ -75,6 +75,7 @@ module async_fifo#(
       wptr_g_ff1  <= wptr_g;
       wptr_g_sync <= wptr_g_ff1;
     end
+
   end
 
   // -------------------------------------------------------
@@ -99,9 +100,13 @@ module async_fifo#(
   assign empty = (rptr_g == wptr_g_sync);
 
   // -------------------------------------------------------
-  // Stub (replaced in Milestone 5)
+  // Full flag (write clock domain)
+  // FIFO is full when top 2 bits of wptr_g differ from rptr_g_sync
+  // and the remaining lower bits are equal (Gray code full condition)
   // -------------------------------------------------------
-  assign full  = 1'b0;
+  assign full = (wptr_g[ADDRWIDTH]   != rptr_g_sync[ADDRWIDTH]  ) &
+                (wptr_g[ADDRWIDTH-1] != rptr_g_sync[ADDRWIDTH-1]) &
+                (wptr_g[ADDRWIDTH-2:0] == rptr_g_sync[ADDRWIDTH-2:0]);
 
 endmodule
         
