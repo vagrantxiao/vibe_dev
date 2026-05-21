@@ -8,19 +8,18 @@ logic                 wclk      = 0;
 logic                 rclk      = 0;
 logic                 wrst_n    = 0;
 logic                 rrst_n    = 0;
-logic                 wpush     = 0;
-logic                 rpop      = 0;
-logic [DATAWIDTH-1:0] wdin      = 0;
+logic                 wrreq     = 0;
+logic                 rdreq     = 0;
+logic [DATAWIDTH-1:0] data      = 0;
+logic                 full;
+logic                 empty;
+logic [DATAWIDTH-1:0] q;
 
-logic [DATAWIDTH-1:0] din;
+logic [DATAWIDTH-1:0] data_in;
 logic                 send_done = 0;
 logic [31:0]          sent_count = 0;
 logic [31:0]          rcvd_count = 0;
 
-
-logic                 wfull;
-logic                 rempty;
-logic [DATAWIDTH-1:0] rdout;
 logic [DATAWIDTH-1:0] expected_data[$];
 logic [DATAWIDTH-1:0] exp_data;
 
@@ -28,21 +27,20 @@ logic [DATAWIDTH-1:0] exp_data;
 always #3 wclk = ~wclk;
 always #5 rclk = ~rclk;
 
-
 async_fifo#(
       .DATAWIDTH (DATAWIDTH  )
     , .ADDRWIDTH (ADDRWIDTH  )
 )dut(
       .wclk      (wclk       )
     , .wrst_n    (wrst_n     )
-    , .wpush     (wpush      )
-    , .wdin      (wdin       )
-    , .wfull     (wfull      )
+    , .wrreq     (wrreq      )
+    , .data      (data       )
+    , .full      (full      )
     , .rclk      (rclk       )
     , .rrst_n    (rrst_n     )
-    , .rpop      (rpop       )
-    , .rdout     (rdout      )
-    , .rempty    (rempty     )
+    , .rdreq     (rdreq      )
+    , .q         (q          )
+    , .empty     (empty     )
 );
 
 initial begin
@@ -58,7 +56,7 @@ initial begin
   wait(send_done);
   $display("All data sent, waiting for remaining data to be read...");
   #10000
-  if (!rempty) begin
+  if (!empty) begin
     $display("Error: FIFO is not empty after waiting, some data may not have been read!");
     $fatal("Test failed due to unread data in FIFO.");
   end else if (sent_count != TEST_NUM) begin
@@ -73,13 +71,13 @@ initial begin
   $finish();
 end
 
-task automatic send_data(input logic [DATAWIDTH-1:0] din);
-  wait(!wfull);
-  wpush = 1'b1;
-  wdin = din;
+task automatic send_data(input logic [DATAWIDTH-1:0] data_in);
+  wait(!full);
+  wrreq = 1'b1;
+  data = data_in;
   @(posedge wclk);
   #1;
-  wpush = 1'b0;
+  wrreq = 1'b0;
 endtask
 
 initial begin
@@ -87,11 +85,11 @@ initial begin
   #1;
 
   for (int i=0; i<TEST_NUM; i=i+1) begin
-    din = $urandom;
-    send_data(din);
+    data_in = $urandom;
+    send_data(data_in);
     sent_count = sent_count + 1;
-    expected_data.push_back(din);
-    $display("Sent data: 0x%08h", din);
+    expected_data.push_back(data_in);
+    $display("Sent data: 0x%08h", data_in);
   end
   send_done = 1;
 end
@@ -101,17 +99,17 @@ initial begin
   forever begin
     @(posedge rclk);
     #1;
-    rpop = 1'b0;
-    wait(!rempty);
+    rdreq = 1'b0;
+    wait(!empty);
     exp_data = expected_data.pop_front();
     rcvd_count = rcvd_count + 1;
-    if (rdout != exp_data) begin
-      $display("[%0d] Data mismatch: expected=0x%08h, actual=0x%08h", rcvd_count, exp_data, rdout);
+    if (q != exp_data) begin
+      $display("[%0d] Data mismatch: expected=0x%08h, actual=0x%08h", rcvd_count, exp_data, q);
       $fatal("Data mismatch detected!");
     end else begin
-      $display("[%0d] Data match: expected=0x%08h, actual=0x%08h", rcvd_count, exp_data, rdout);
+      $display("[%0d] Data match: expected=0x%08h, actual=0x%08h", rcvd_count, exp_data, q);
     end
-    rpop = 1'b1;
+    rdreq = 1'b1;
   end
 end
 

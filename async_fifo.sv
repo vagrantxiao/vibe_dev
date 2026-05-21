@@ -5,14 +5,14 @@ async_fifo#(
 )(
       .wclk      (           )
     , .wrst_n    (           )
-    , .wpush     (           )
-    , .wdin      (           )
-    , .wfull     (           )
+    , .wrreq     (           )
+    , .data      (           )
+    , .full     (           )
     , .rclk      (           )
     , .rrst_n    (           )
-    , .rpop      (           )
+    , .rdreq      (           )
     , .rdou      (           )
-    , .rempty    (           )
+    , .empty    (           )
 );
 */
 
@@ -25,19 +25,25 @@ module async_fifo#(
     )(
       input                  wclk
     , input                  wrst_n
-    , input                  wpush
-    , input [DATAWIDTH-1:0]  wdin
-    , output                 wfull
+    , input                  wrreq
+    , input [DATAWIDTH-1:0]  data
+    , output                 full
 
     , input                  rclk
     , input                  rrst_n
-    , input                  rpop
-    , output [DATAWIDTH-1:0] rdout
-    , output                 rempty
+    , input                  rdreq
+    , output [DATAWIDTH-1:0] q
+    , output                 empty
 );
 
 
 logic [DATAWIDTH-1 : 0] mem [(1<<ADDRWIDTH)-1:0];
+initial begin
+    for(int i=0; i<(1<<ADDRWIDTH); i++) begin
+        mem[i] = 0;
+    end
+end
+
 logic [DATAWIDTH-1 : 0] mem_reg;
 
 logic [ADDRWIDTH : 0] wwptr_bin;
@@ -52,12 +58,11 @@ logic [ADDRWIDTH : 0] rwptr_gray;
 ///////////////////////////////////////////////////////////////////////////////
 // write clock domain
 
-integer ii;
 // write port
 always_ff @ (posedge wclk) begin
-    if( ~wfull && wpush) begin
-        mem[wwptr_bin[ADDRWIDTH-1:0]] <= wdin;
-        mem_reg                       <= wdin;
+    if( ~full && wrreq) begin
+        mem[wwptr_bin[ADDRWIDTH-1:0]] <= data;
+        mem_reg                       <= data;
     end
 end
 
@@ -66,7 +71,7 @@ always_ff @ (posedge wclk) begin
     if(!wrst_n) begin
         wwptr_bin <= 0;
     end else begin
-        wwptr_bin <= ((~wfull) && wpush) ? wwptr_bin+1 : wwptr_bin;
+        wwptr_bin <= ((~full) && wrreq) ? wwptr_bin+1 : wwptr_bin;
     end
 end
 
@@ -81,20 +86,20 @@ asynchronizer#(
     , .sdin      (rrptr_gray )
 );
 
-assign wfull = ({~wrptr_gray[ADDRWIDTH:ADDRWIDTH-1], wrptr_gray[ADDRWIDTH-2:0]} == wwptr_gray);
+assign full = ({~wrptr_gray[ADDRWIDTH:ADDRWIDTH-1], wrptr_gray[ADDRWIDTH-2:0]} == wwptr_gray);
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // read clock domain
 
-assign rdout = mem[rrptr_bin[ADDRWIDTH-1:0]];
+assign q = mem[rrptr_bin[ADDRWIDTH-1:0]];
 
 //rrptr_bin
 always_ff @ (posedge rclk) begin
     if(!rrst_n) begin
         rrptr_bin <= 0;
     end else begin
-        rrptr_bin <= ((~rempty) && rpop) ? rrptr_bin+1 : rrptr_bin;
+        rrptr_bin <= ((~empty) && rdreq) ? rrptr_bin+1 : rrptr_bin;
     end
 end
 
@@ -109,7 +114,7 @@ asynchronizer#(
     , .sdin      (wwptr_gray )
 );
 
-assign rempty = (rwptr_gray == rrptr_gray);
+assign empty = (rwptr_gray == rrptr_gray);
 
 
 endmodule
