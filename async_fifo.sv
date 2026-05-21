@@ -39,11 +39,25 @@ module async_fifo#(
   end
 
   // -------------------------------------------------------
+  // Read pointer (ADDRWIDTH+1 bits, MSB = wrap bit)
+  // -------------------------------------------------------
+  reg [ADDRWIDTH:0] rptr;
+
+  always @(posedge rclk or negedge rrst_n) begin
+    if (!rrst_n)
+      rptr <= '0;
+    else if (rdreq && !empty)
+      rptr <= rptr + 1'b1;
+  end
+
+  // FWFT: q is combinatorial read from memory
+  assign q = mem[rptr[ADDRWIDTH-1:0]];
+
+  // -------------------------------------------------------
   // Stubs (replaced in later milestones)
   // -------------------------------------------------------
   assign full  = 1'b0;
   assign empty = 1'b1;
-  assign q     = '0;
 
 endmodule
         

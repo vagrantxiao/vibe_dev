@@ -155,11 +155,11 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 - Hard-wired `full = 0`, `empty = 1`, `q = 0` as stubs
 - **Result**: All 2000 items sent successfully; elaboration clean; `rcvd_count == 0` expected (read side blocked by `empty` stub)
 
-### Milestone 2 — Read Path
-- Implement `rptr` binary counter (ADDRWIDTH+1 bits), increment on `rdreq & !empty`
+### ✅ Milestone 2 — Read Path *(DONE)*
+- Implemented `rptr` binary counter (ADDRWIDTH+1 bits), increment on `rdreq & !empty`
 - Drive `q = mem[rptr[ADDRWIDTH-1:0]]` combinatorially (FWFT)
-- Keep `full`/`empty` as stubs
-- **Acceptance**: Vivado elaborates; waveform shows memory write and read addressing correctly
+- Kept `full`/`empty` as stubs
+- **Result**: Elaboration clean; `rcvd_count == 0` expected (read side still blocked by `empty` stub)
 
 ### Milestone 3 — Gray Code Conversion + 2-FF Synchronizers
 - Add `wptr_g = wptr ^ (wptr >> 1)` (combinatorial)
