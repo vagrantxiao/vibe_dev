@@ -2,19 +2,30 @@ module tb_top();
 
 localparam DATAWIDTH = 32;
 localparam ADDRWIDTH = 10;
-localparam TEST_NUM = 1000;
+localparam TEST_NUM = 2000;
 
-reg wclk = 0;
-reg rclk = 0;
-reg wrst_n = 0;
-reg rrst_n = 0;
-reg wpush = 0;
-reg rpop  = 0;
-reg [DATAWIDTH-1:0] wdin = 0;
+logic                 wclk      = 0;
+logic                 rclk      = 0;
+logic                 wrst_n    = 0;
+logic                 rrst_n    = 0;
+logic                 wpush     = 0;
+logic                 rpop      = 0;
+logic [DATAWIDTH-1:0] wdin      = 0;
+
+logic                 send_done = 0;
+logic [31:0]          sent_count = 0;
+logic [31:0]          rcvd_count = 0;
 
 
-wire wfull, rempty;
-wire [DATAWIDTH-1:0] rdout;
+logic                 wfull;
+logic                 rempty;
+logic [DATAWIDTH-1:0] rdout;
+logic [DATAWIDTH-1:0] expected_data[$];
+logic [DATAWIDTH-1:0] exp_data;
+
+
+always #3 wclk = ~wclk;
+always #5 rclk = ~rclk;
 
 
 async_fifo#(
@@ -33,11 +44,7 @@ async_fifo#(
     , .rempty    (rempty     )
 );
 
-
-always #3 wclk = ~wclk;
-always #5 rclk = ~rclk;
-
-task automatic send_data(logic [DATAWIDTH-1:0] din) begin
+task automatic send_data(input logic [DATAWIDTH-1:0] din);
   wait(!wfull);
   wdin = din;
   wpush = 1'b1;
@@ -56,19 +63,53 @@ initial begin
   rrst_n = 1;
   $display("rd side is reste");
 
-  #100
-  @(posedge wclk);
-  for (int i=0; i<TEST_NUM; i=i+1) begin
-    send_data(i);
+  wait(send_done);
+  $display("All data sent, waiting for remaining data to be read...");
+  #10000
+  if (!rempty) begin
+    $display("Error: FIFO is not empty after waiting, some data may not have been read!");
+    $fatal("Test failed due to unread data in FIFO.");
+  end else if (sent_count != TEST_NUM) begin
+    $display("Error: Expected to send %0d items, but only sent %0d items!", TEST_NUM, sent_count);
+    $fatal("Test failed due to incorrect number of items sent.");
+  end else if (rcvd_count != TEST_NUM) begin
+    $display("Error: Expected to read %0d items, but only read %0d items!", TEST_NUM, rcvd_count);
+    $fatal("Test failed due to incorrect number of items read.");
+  end else begin
+    $display("Test completed successfully!");
   end
-  #100
   $finish();
 end
 
+initial begin
+  wait(wrst_n);
+  @(posedge rclk);
+  for (int i=0; i<TEST_NUM; i=i+1) begin
+    send_data($urandom);
+    sent_count = sent_count + 1;
+    expected_data.push_back(wdin);
+    $display("Sent data: 0x%08h", wdin);
+  end
+  send_done = 1;
+end
 
-
-
-
+initial begin
+  wait(rrst_n);
+  forever begin
+    rpop = 1'b0;
+    @(posedge rclk);
+    wait(!rempty);
+    exp_data = expected_data.pop_front();
+    rcvd_count = rcvd_count + 1;
+    if (rdout != exp_data) begin
+      $display("[%0d] Data mismatch: expected=0x%08h, actual=0x%08h", rcvd_count, exp_data, rdout);
+      $fatal("Data mismatch detected!");
+    end else begin
+      $display("[%0d] Data match: expected=0x%08h, actual=0x%08h", rcvd_count, exp_data, rdout);
+    end
+    rpop = 1'b1;
+  end
+end
 
 
 
