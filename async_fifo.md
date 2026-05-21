@@ -148,12 +148,12 @@ Designing an asynchronous FIFO from scratch in SystemVerilog, targeting Xilinx Z
 
 ## Implementation Milestones
 
-### Milestone 1 — Dual-Port Memory + Write Path
-- Declare `reg [DATAWIDTH-1:0] mem [0:2**ADDRWIDTH-1]`
-- Implement `wptr` binary counter (ADDRWIDTH+1 bits), increment on `wrreq & !full`
+### ✅ Milestone 1 — Dual-Port Memory + Write Path *(DONE)*
+- Declared `reg [DATAWIDTH-1:0] mem [0:2**ADDRWIDTH-1]`
+- Implemented `wptr` binary counter (ADDRWIDTH+1 bits), increment on `wrreq & !full`
 - Write `data` into `mem[wptr[ADDRWIDTH-1:0]]` on rising `wclk`
-- Hard-wire `full = 0`, `empty = 1`, `q = 0` as stubs
-- **Acceptance**: Vivado elaborates without errors (`make all`)
+- Hard-wired `full = 0`, `empty = 1`, `q = 0` as stubs
+- **Result**: All 2000 items sent successfully; elaboration clean; `rcvd_count == 0` expected (read side blocked by `empty` stub)
 
 ### Milestone 2 — Read Path
 - Implement `rptr` binary counter (ADDRWIDTH+1 bits), increment on `rdreq & !empty`
