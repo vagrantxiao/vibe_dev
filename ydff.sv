@@ -15,14 +15,14 @@ module ydff #(
       parameter DATAWIDTH = 8
     , parameter INIT      = 0
 )(
-      output reg   [DATAWIDTH-1:0] dout
+      output logic [DATAWIDTH-1:0] dout
     , input  wire                  clk 
     , input  wire                  rst_n
     , input  wire  [DATAWIDTH-1:0] din
     , input  wire                  en
 );
 
-always@(posedge clk)begin
+always_ff @ (posedge clk)begin
     if(~rst_n) begin
         dout <= INIT;
     end else begin

@@ -37,15 +37,15 @@ module async_fifo#(
 );
 
 
-reg  [DATAWIDTH-1:0] mem [(1<<ADDRWIDTH)-1:0];
+logic [DATAWIDTH-1 : 0] mem [(1<<ADDRWIDTH)-1:0];
 
-reg  [ADDRWIDTH  :0] wwptr_bin;
-wire [ADDRWIDTH  :0] wwptr_gray;
-wire [ADDRWIDTH  :0] wrptr_gray;
+logic [ADDRWIDTH : 0] wwptr_bin;
+logic [ADDRWIDTH : 0] wwptr_gray;
+logic [ADDRWIDTH : 0] wrptr_gray;
 
-reg  [ADDRWIDTH  :0] rrptr_bin;
-wire [ADDRWIDTH  :0] rrptr_gray;
-wire [ADDRWIDTH  :0] rwptr_gray;
+logic [ADDRWIDTH : 0] rrptr_bin;
+logic [ADDRWIDTH : 0] rrptr_gray;
+logic [ADDRWIDTH : 0] rwptr_gray;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ wire [ADDRWIDTH  :0] rwptr_gray;
 
 integer ii;
 // write port
-always@(posedge wclk) begin
+always_ff @ (posedge wclk) begin
     if(!wrst_n) begin
         for(ii=0; ii<(1<<ADDRWIDTH); ii = ii+1) begin
             mem[ii] <= 0;
@@ -66,7 +66,7 @@ always@(posedge wclk) begin
 end
 
 //wwptr_bin
-always@(posedge wclk) begin
+always_ff @ (posedge wclk) begin
     if(!wrst_n) begin
         wwptr_bin <= 0;
     end else begin
@@ -94,11 +94,11 @@ assign wfull = ({~wrptr_gray[ADDRWIDTH:ADDRWIDTH-1], wrptr_gray[ADDRWIDTH-2:0]} 
 assign rdout = mem[rrptr_bin[ADDRWIDTH-1:0]];
 
 //rrptr_bin
-always@(posedge rclk) begin
+always_ff @ (posedge rclk) begin
     if(!rrst_n) begin
         rrptr_bin <= 0;
     end else begin
-        rrptr_bin = ((~rempty) && rpop) ? rrptr_bin+1 : rrptr_bin;
+        rrptr_bin <= ((~rempty) && rpop) ? rrptr_bin+1 : rrptr_bin;
     end
 end
 

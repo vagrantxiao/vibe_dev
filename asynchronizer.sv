@@ -12,13 +12,13 @@ asynchronizer#(
 module asynchronizer#(
       parameter DATAWIDTH = 8
     )(
-      input                 dclk 
-    , input                 drst_n
-    , input [DATAWIDTH-1:0] ddout
-    , input [DATAWIDTH-1:0] sdin
+      input                  dclk 
+    , input                  drst_n
+    , input [DATAWIDTH-1:0]  sdin
+    , output [DATAWIDTH-1:0] ddout
 );
 
-wire [DATAWIDTH-1:0] ddin;
+logic [DATAWIDTH-1:0] ddin;
 
 ydff #(
       .DATAWIDTH (DATAWIDTH)
