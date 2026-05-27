@@ -255,13 +255,16 @@ Build a SystemVerilog testbench (`tb_top.sv`) with basic stimulus:
 
 | Task | Deliverable | Done |
 |------|-------------|------|
-| 3.1  Simultaneous read/write | Concurrent producers and consumers at various rates | ☐ |
-| 3.2  Clock ratio sweep | Test with `wclk` >> `rclk`, `wclk` << `rclk`, and `wclk` ≈ `rclk` | ☐ |
-| 3.3  Back-to-back full→empty | Rapid fill then drain cycles | ☐ |
-| 3.4  Reset during operation | Assert reset mid-transfer, verify clean recovery | ☐ |
-| 3.5  Randomized stimulus | Random write/read enables with data checking | ☐ |
+| 3.1  Simultaneous read/write | Concurrent R/W with random 0–3 cycle delays, 2000 words | ✅ |
+| 3.2  Clock ratio sweep | 3 configs: wclk>>rclk, wclk<<rclk, wclk≈rclk — 1000 words each | ✅ |
+| 3.3  Back-to-back full→empty | 4 rapid fill/drain cycles of 1024 words each | ✅ |
+| 3.4  Reset during operation | Reset after 100 writes, verify flags, 50 words post-reset | ✅ |
+| 3.5  Randomized stimulus | Random write/read timing, 3000 words | ✅ |
 
-**Exit criteria**: Zero data corruption or flag errors across all scenarios.
+**Exit criteria**: Zero data corruption or flag errors across all scenarios. ✅
+
+**Result**: 11/11 tests passed (4 from MS2 + 7 from MS3 including 3 clock-ratio sub-tests).
+All scenarios: zero mismatches, correct full/empty flags, clean reset recovery.
 
 ---
 
