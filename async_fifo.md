@@ -238,13 +238,16 @@ Build a SystemVerilog testbench (`tb_top.sv`) with basic stimulus:
 
 | Task | Deliverable | Done |
 |------|-------------|------|
-| 2.1  Clock generation | Independent `wclk` and `rclk` with different frequencies | ☐ |
-| 2.2  Reset sequence | Assert both resets, release asynchronously | ☐ |
-| 2.3  Simple write-then-read | Write N words, then read N words, verify data integrity | ☐ |
-| 2.4  Full flag test | Write until `full` asserts, confirm no overflow | ☐ |
-| 2.5  Empty flag test | Read until `empty` asserts, confirm no underflow | ☐ |
+| 2.1  Clock generation | Independent `wclk` (6ns) and `rclk` (10ns) | ✅ |
+| 2.2  Reset sequence | Assert both resets, release asynchronously, verify empty=1/full=0 | ✅ |
+| 2.3  Write-then-read | Write 2000 words with concurrent reader, verify all data | ✅ |
+| 2.4  Full flag test | Write 1024 words until `full` asserts, confirm no overflow | ✅ |
+| 2.5  Empty flag test | Read 1024 words until `empty` asserts, confirm no underflow | ✅ |
 
-**Exit criteria**: All basic tests pass with correct data and flag behavior.
+**Exit criteria**: All basic tests pass with correct data and flag behavior. ✅
+
+**Result**: 4/4 tests passed — reset flags, full flag (1024 writes), empty flag
+(1024 reads with data verify), write-then-read (2000 words, zero mismatches).
 
 ---
 

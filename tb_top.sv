@@ -1,9 +1,16 @@
 module tb_top();
 
+// ---------------------------------------------------------------
+// Parameters
+// ---------------------------------------------------------------
 localparam DATAWIDTH = 32;
 localparam ADDRWIDTH = 10;
-localparam TEST_NUM = 2000;
+localparam DEPTH     = 1 << ADDRWIDTH;    // 1024
+localparam TEST_NUM  = 2000;
 
+// ---------------------------------------------------------------
+// Signals
+// ---------------------------------------------------------------
 logic                 wclk      = 0;
 logic                 rclk      = 0;
 logic                 wrst_n    = 0;
@@ -15,18 +22,20 @@ logic                 full;
 logic                 empty;
 logic [DATAWIDTH-1:0] q;
 
-logic [DATAWIDTH-1:0] data_in;
-logic                 send_done = 0;
-logic [31:0]          sent_count = 0;
-logic [31:0]          rcvd_count = 0;
-
 logic [DATAWIDTH-1:0] expected_data[$];
 logic [DATAWIDTH-1:0] exp_data;
+int                   pass_count = 0;
+int                   fail_count = 0;
 
+// ---------------------------------------------------------------
+// 2.1  Clock generation — independent frequencies
+// ---------------------------------------------------------------
+always #3 wclk = ~wclk;   // wclk period = 6 ns
+always #5 rclk = ~rclk;   // rclk period = 10 ns
 
-always #3 wclk = ~wclk;
-always #5 rclk = ~rclk;
-
+// ---------------------------------------------------------------
+// DUT instantiation
+// ---------------------------------------------------------------
 async_fifo#(
       .DATAWIDTH (DATAWIDTH  )
     , .ADDRWIDTH (ADDRWIDTH  )
@@ -35,89 +44,248 @@ async_fifo#(
     , .wrst_n    (wrst_n     )
     , .wrreq     (wrreq      )
     , .data      (data       )
-    , .full      (full      )
+    , .full      (full       )
     , .rclk      (rclk       )
     , .rrst_n    (rrst_n     )
     , .rdreq     (rdreq      )
     , .q         (q          )
-    , .empty     (empty     )
+    , .empty     (empty      )
 );
 
+// ---------------------------------------------------------------
+// Timeout
+// ---------------------------------------------------------------
 initial begin
-  #100;
-  @(posedge wclk);
-  wrst_n = 1;
-  $display("[%0t] wr side is reset", $time);
-
-  @(posedge rclk);
-  rrst_n = 1;
-  $display("[%0t] rd side is reset", $time);
-
-  wait(send_done);
-  $display("[%0t] All data sent, waiting for remaining data to be read...", $time);
-  #10000;
-  if (!empty) begin
-    $display("[%0t] Error: FIFO is not empty after waiting, some data may not have been read!", $time);
-    $fatal(1, "[%0t] Test failed due to unread data in FIFO.", $time);
-  end else if (sent_count != TEST_NUM) begin
-    $display("[%0t] Error: Expected to send %0d items, but only sent %0d items!", $time, TEST_NUM, sent_count);
-    $fatal(1, "[%0t] Test failed due to incorrect number of items sent.", $time);
-  end else if (rcvd_count != TEST_NUM) begin
-    $display("[%0t] Error: Expected to read %0d items, but only read %0d items!", $time, TEST_NUM, rcvd_count);
-    $fatal(1, "[%0t] Test failed due to incorrect number of items read.", $time);
-  end else begin
-    $display("[%0t] Test completed successfully!", $time);
-  end
-  $finish();
+  #500_000;
+  $fatal(1, "[%0t] Test timed out after 500,000 ns!", $time);
 end
 
-initial begin
-  #100_000;
-  $fatal(1, "[%0t] Test timed out after 100,000ns!", $time);
-end
+// ---------------------------------------------------------------
+// Helper tasks
+// ---------------------------------------------------------------
 
-task automatic send_data(input logic [DATAWIDTH-1:0] data_in);
+// Write one word (waits for !full)
+task automatic write_one(input logic [DATAWIDTH-1:0] wdata);
   wait(!full);
-  wrreq = 1'b1;
-  data = data_in;
+  @(posedge wclk);
+  wrreq <= 1'b1;
+  data  <= wdata;
   @(posedge wclk);
   #1;
-  wrreq = 1'b0;
+  wrreq <= 1'b0;
 endtask
 
-initial begin
-  wait(wrst_n);
+// Read one word (waits for !empty, returns data via q)
+task automatic read_one(output logic [DATAWIDTH-1:0] rdata);
+  wait(!empty);
+  rdata = q;              // async read — data available before rdreq
+  @(posedge rclk);
+  rdreq <= 1'b1;
+  @(posedge rclk);
   #1;
+  rdreq <= 1'b0;
+endtask
 
-  for (int i=0; i<TEST_NUM; i=i+1) begin
-    data_in = $urandom;
-    send_data(data_in);
-    sent_count = sent_count + 1;
-    expected_data.push_back(data_in);
-    $display("[%0t] Sent data: 0x%08h", $time, data_in);
-  end
-  send_done = 1;
-end
+// Apply reset
+task automatic apply_reset();
+  wrst_n = 0;
+  rrst_n = 0;
+  wrreq  = 0;
+  rdreq  = 0;
+  data   = 0;
+  #100;
+  @(posedge wclk); wrst_n = 1;
+  @(posedge rclk); rrst_n = 1;
+  #50;  // let synchronizers settle
+endtask
 
+// ---------------------------------------------------------------
+// Master test flow
+// ---------------------------------------------------------------
 initial begin
-  wait(rrst_n);
-  forever begin
-    @(posedge rclk);
-    #1;
-    rdreq = 1'b0;
-    wait(!empty);
-    exp_data = expected_data.pop_front();
-    rcvd_count = rcvd_count + 1;
-    if (q != exp_data) begin
-      $display("[%0t][%0d] Data mismatch: expected=0x%08h, actual=0x%08h", $time, rcvd_count, exp_data, q);
-      $fatal(1, "[%0t] Data mismatch detected!", $time);
-    end else begin
-      $display("[%0t][%0d] Data match: expected=0x%08h, actual=0x%08h", $time, rcvd_count, exp_data, q);
-    end
-    rdreq = 1'b1;
+
+  // ===========================================================
+  // 2.2  Reset sequence
+  // ===========================================================
+  $display("\n========== TEST: Reset Sequence ==========");
+  apply_reset();
+  $display("[%0t] Reset released (wrst_n=1, rrst_n=1)", $time);
+
+  // After reset: empty must be 1, full must be 0
+  #20;
+  if (empty !== 1'b1) begin
+    $fatal(1, "[%0t] FAIL: empty should be 1 after reset, got %0b", $time, empty);
   end
+  if (full !== 1'b0) begin
+    $fatal(1, "[%0t] FAIL: full should be 0 after reset, got %0b", $time, full);
+  end
+  $display("[%0t] PASS: After reset — empty=1, full=0", $time);
+  pass_count++;
+
+  // ===========================================================
+  // 2.4  Full flag test — write until full
+  // ===========================================================
+  $display("\n========== TEST: Full Flag ==========");
+  begin
+    int wr_count;
+    wr_count = 0;
+    expected_data = {};
+
+    // Fill FIFO to capacity
+    while (!full) begin
+      automatic logic [DATAWIDTH-1:0] wdata = $urandom;
+      @(posedge wclk);
+      wrreq <= 1'b1;
+      data  <= wdata;
+      @(posedge wclk);
+      #1;
+      wrreq <= 1'b0;
+      wr_count++;
+      expected_data.push_back(wdata);
+      // Allow full flag to propagate through synchronizers
+      #2;
+    end
+
+    $display("[%0t] Wrote %0d words, full=%0b", $time, wr_count, full);
+
+    if (wr_count != DEPTH) begin
+      $display("[%0t] WARNING: Expected to write %0d words before full, wrote %0d (conservative full is OK)",
+               $time, DEPTH, wr_count);
+    end
+
+    // Attempt one more write while full — should be blocked
+    @(posedge wclk);
+    wrreq <= 1'b1;
+    data  <= 32'hDEAD_BEEF;
+    @(posedge wclk);
+    #1;
+    wrreq <= 1'b0;
+    // The write guard (wrreq && !full) in RTL prevents this from corrupting memory
+
+    $display("[%0t] PASS: Full flag asserted after filling FIFO", $time);
+    pass_count++;
+  end
+
+  // ===========================================================
+  // 2.5  Empty flag test — read until empty, verify data
+  // ===========================================================
+  $display("\n========== TEST: Empty Flag ==========");
+  begin
+    int rd_count;
+    logic [DATAWIDTH-1:0] rdata;
+    rd_count = 0;
+
+    while (!empty) begin
+      rdata = q;
+      exp_data = expected_data.pop_front();
+      rd_count++;
+      if (rdata !== exp_data) begin
+        $display("[%0t][%0d] FAIL: expected=0x%08h, actual=0x%08h", $time, rd_count, exp_data, rdata);
+        fail_count++;
+      end
+      @(posedge rclk);
+      rdreq <= 1'b1;
+      @(posedge rclk);
+      #1;
+      rdreq <= 1'b0;
+      // Allow empty flag to propagate
+      #2;
+    end
+
+    $display("[%0t] Read %0d words, empty=%0b", $time, rd_count, empty);
+
+    if (fail_count > 0) begin
+      $fatal(1, "[%0t] FAIL: %0d data mismatches during empty-flag test", $time, fail_count);
+    end
+
+    $display("[%0t] PASS: Empty flag asserted after draining FIFO, all data correct", $time);
+    pass_count++;
+  end
+
+  // ===========================================================
+  // 2.3  Write-then-read (TEST_NUM words, concurrent R/W)
+  //      Writer and reader run in parallel; we wait for both
+  //      to finish, then verify counts and empty flag.
+  // ===========================================================
+  $display("\n========== TEST: Write-Then-Read (%0d words) ==========", TEST_NUM);
+
+  // Re-apply reset for a clean state
+  apply_reset();
+  expected_data = {};
+
+  begin
+    int  sent_count;
+    int  rcvd_count;
+    int  mismatch;
+    logic wr_done;
+    sent_count = 0;
+    rcvd_count = 0;
+    mismatch   = 0;
+    wr_done    = 0;
+
+    fork
+      // --- Writer ---
+      begin
+        logic [DATAWIDTH-1:0] wdata;
+        for (int i = 0; i < TEST_NUM; i++) begin
+          wdata = $urandom;
+          write_one(wdata);
+          expected_data.push_back(wdata);
+          sent_count++;
+          if (sent_count % 500 == 0)
+            $display("[%0t] Sent %0d / %0d", $time, sent_count, TEST_NUM);
+        end
+        $display("[%0t] Write phase complete — %0d words sent", $time, sent_count);
+        wr_done = 1;
+      end
+
+      // --- Reader ---
+      begin
+        logic [DATAWIDTH-1:0] rdata;
+        // Keep reading until writer is done AND fifo is drained
+        while (!wr_done || !empty) begin
+          if (!empty) begin
+            read_one(rdata);
+            exp_data = expected_data.pop_front();
+            rcvd_count++;
+            if (rdata !== exp_data) begin
+              $display("[%0t][%0d] FAIL: expected=0x%08h, actual=0x%08h",
+                       $time, rcvd_count, exp_data, rdata);
+              mismatch++;
+            end
+            if (rcvd_count % 500 == 0)
+              $display("[%0t] Received %0d / %0d", $time, rcvd_count, TEST_NUM);
+          end else begin
+            @(posedge rclk); // wait a cycle if empty
+          end
+        end
+      end
+    join
+
+    if (mismatch > 0)
+      $fatal(1, "[%0t] FAIL: %0d mismatches in write-then-read test", $time, mismatch);
+
+    if (sent_count != TEST_NUM || rcvd_count != TEST_NUM)
+      $fatal(1, "[%0t] FAIL: sent=%0d, rcvd=%0d, expected=%0d",
+             $time, sent_count, rcvd_count, TEST_NUM);
+
+    // Wait and check empty
+    #200;
+    if (!empty)
+      $fatal(1, "[%0t] FAIL: FIFO not empty after reading all data", $time);
+
+    $display("[%0t] PASS: Write-then-read — %0d/%0d words verified, FIFO empty",
+             $time, rcvd_count, TEST_NUM);
+    pass_count++;
+  end
+
+  // ===========================================================
+  // Summary
+  // ===========================================================
+  $display("\n==========================================");
+  $display("  ALL TESTS PASSED (%0d / %0d)", pass_count, pass_count);
+  $display("==========================================\n");
+  $finish();
 end
-
-
 
 endmodule
