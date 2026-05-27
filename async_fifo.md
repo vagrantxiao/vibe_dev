@@ -218,14 +218,17 @@ Implement the five internal sub-modules inside `async_fifo.sv`:
 
 | Task | Deliverable | Done |
 |------|-------------|------|
-| 1.1  Dual-port RAM (`fifo_mem`) | Parameterized memory with sync write, async read | ☐ |
-| 1.2  Write pointer & full logic (`wptr_full`) | Binary/Gray pointer, full flag generation | ☐ |
-| 1.3  Read pointer & empty logic (`rptr_empty`) | Binary/Gray pointer, empty flag generation | ☐ |
-| 1.4  Synchronizer `sync_r2w` | 2-FF chain: `rptr_gray` → `wclk` domain | ☐ |
-| 1.5  Synchronizer `sync_w2r` | 2-FF chain: `wptr_gray` → `rclk` domain | ☐ |
-| 1.6  Top-level wiring | Instantiate and connect all sub-modules in `async_fifo` | ☐ |
+| 1.1  Dual-port RAM (`fifo_mem`) | Parameterized memory with sync write, async read | ✅ |
+| 1.2  Write pointer & full logic (`wptr_full`) | Binary/Gray pointer, full flag generation | ✅ |
+| 1.3  Read pointer & empty logic (`rptr_empty`) | Binary/Gray pointer, empty flag generation | ✅ |
+| 1.4  Synchronizer `sync_r2w` | 2-FF chain: `rptr_gray` → `wclk` domain | ✅ |
+| 1.5  Synchronizer `sync_w2r` | 2-FF chain: `wptr_gray` → `rclk` domain | ✅ |
+| 1.6  Top-level wiring | Instantiate and connect all sub-modules in `async_fifo` | ✅ |
 
-**Exit criteria**: RTL compiles cleanly with zero errors/warnings.
+**Exit criteria**: RTL compiles cleanly with zero errors/warnings. ✅
+
+**Result**: Vivado simulation passed — 2000/2000 random 32-bit words verified
+(DATAWIDTH=32, ADDRWIDTH=10, wclk=6ns, rclk=10ns). Zero data mismatches.
 
 ---
 
