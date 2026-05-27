@@ -272,11 +272,17 @@ All scenarios: zero mismatches, correct full/empty flags, clean reset recovery.
 
 | Task | Deliverable | Done |
 |------|-------------|------|
-| 4.1  RTL lint clean | No warnings from linting tools (e.g., Verilator, Spyglass) | ☐ |
-| 4.2  CDC report clean | All CDC paths identified and properly constrained | ☐ |
-| 4.3  Synthesis sanity check | Passes synthesis with target library (if available) | ☐ |
+| 4.1  RTL lint clean | Vivado RTL DRC — 0 violations | ✅ |
+| 4.2  CDC report clean | 10 crossings, all Safe, 0 Unsafe, 0 missing ASYNC_REG | ✅ |
+| 4.3  Synthesis sanity check | ZCU102 (xczu9eg): 28 LUTs, 40 FFs, 0 BRAM | ✅ |
 
-**Exit criteria**: Clean lint and CDC reports; synthesizable design.
+**Exit criteria**: Clean lint and CDC reports; synthesizable design. ✅
+
+**Result**: 3/3 MS4 checks passed. `ASYNC_REG` attributes added to all synchronizer
+FFs. Methodology advisories (22) are all missing I/O delay constraints — expected
+for an IP-level module; to be constrained at top-level integration.
+Reports: `reports/rtl_drc.rpt`, `reports/cdc_report.rpt`, `reports/synth_utilization.rpt`,
+`reports/synth_timing_summary.rpt`, `reports/methodology.rpt`.
 
 ---
 
