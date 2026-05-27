@@ -210,6 +210,79 @@ throughput for **guaranteed correctness**.
 
 ---
 
+## Implementation Milestones
+
+### Milestone 1 — RTL: Sub-Modules
+
+Implement the five internal sub-modules inside `async_fifo.sv`:
+
+| Task | Deliverable | Done |
+|------|-------------|------|
+| 1.1  Dual-port RAM (`fifo_mem`) | Parameterized memory with sync write, async read | ☐ |
+| 1.2  Write pointer & full logic (`wptr_full`) | Binary/Gray pointer, full flag generation | ☐ |
+| 1.3  Read pointer & empty logic (`rptr_empty`) | Binary/Gray pointer, empty flag generation | ☐ |
+| 1.4  Synchronizer `sync_r2w` | 2-FF chain: `rptr_gray` → `wclk` domain | ☐ |
+| 1.5  Synchronizer `sync_w2r` | 2-FF chain: `wptr_gray` → `rclk` domain | ☐ |
+| 1.6  Top-level wiring | Instantiate and connect all sub-modules in `async_fifo` | ☐ |
+
+**Exit criteria**: RTL compiles cleanly with zero errors/warnings.
+
+---
+
+### Milestone 2 — Basic Testbench
+
+Build a SystemVerilog testbench (`tb_top.sv`) with basic stimulus:
+
+| Task | Deliverable | Done |
+|------|-------------|------|
+| 2.1  Clock generation | Independent `wclk` and `rclk` with different frequencies | ☐ |
+| 2.2  Reset sequence | Assert both resets, release asynchronously | ☐ |
+| 2.3  Simple write-then-read | Write N words, then read N words, verify data integrity | ☐ |
+| 2.4  Full flag test | Write until `full` asserts, confirm no overflow | ☐ |
+| 2.5  Empty flag test | Read until `empty` asserts, confirm no underflow | ☐ |
+
+**Exit criteria**: All basic tests pass with correct data and flag behavior.
+
+---
+
+### Milestone 3 — Stress & Corner-Case Testing
+
+| Task | Deliverable | Done |
+|------|-------------|------|
+| 3.1  Simultaneous read/write | Concurrent producers and consumers at various rates | ☐ |
+| 3.2  Clock ratio sweep | Test with `wclk` >> `rclk`, `wclk` << `rclk`, and `wclk` ≈ `rclk` | ☐ |
+| 3.3  Back-to-back full→empty | Rapid fill then drain cycles | ☐ |
+| 3.4  Reset during operation | Assert reset mid-transfer, verify clean recovery | ☐ |
+| 3.5  Randomized stimulus | Random write/read enables with data checking | ☐ |
+
+**Exit criteria**: Zero data corruption or flag errors across all scenarios.
+
+---
+
+### Milestone 4 — Lint & CDC Analysis
+
+| Task | Deliverable | Done |
+|------|-------------|------|
+| 4.1  RTL lint clean | No warnings from linting tools (e.g., Verilator, Spyglass) | ☐ |
+| 4.2  CDC report clean | All CDC paths identified and properly constrained | ☐ |
+| 4.3  Synthesis sanity check | Passes synthesis with target library (if available) | ☐ |
+
+**Exit criteria**: Clean lint and CDC reports; synthesizable design.
+
+---
+
+### Milestone 5 — Documentation & Wrap-Up
+
+| Task | Deliverable | Done |
+|------|-------------|------|
+| 5.1  Update `async_fifo.md` | Final design doc with any deviations from plan | ☐ |
+| 5.2  Update `README.md` | Build/run instructions, file inventory | ☐ |
+| 5.3  Final commit & tag | Clean git history, version tag | ☐ |
+
+**Exit criteria**: Complete, reviewable deliverable.
+
+---
+
 ## Possible Extensions
 
 - **Almost-full / almost-empty flags**: programmable thresholds for flow control.
