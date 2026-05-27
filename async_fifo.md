@@ -290,11 +290,29 @@ Reports: `reports/rtl_drc.rpt`, `reports/cdc_report.rpt`, `reports/synth_utiliza
 
 | Task | Deliverable | Done |
 |------|-------------|------|
-| 5.1  Update `async_fifo.md` | Final design doc with any deviations from plan | ☐ |
-| 5.2  Update `README.md` | Build/run instructions, file inventory | ☐ |
-| 5.3  Final commit & tag | Clean git history, version tag | ☐ |
+| 5.1  Update `async_fifo.md` | Final design doc with deviations and notes | ✅ |
+| 5.2  Update `README.md` | Build/run instructions, file inventory | ✅ |
+| 5.3  Final commit & tag | Clean git history, `v1.0` tag | ✅ |
 
-**Exit criteria**: Complete, reviewable deliverable.
+**Exit criteria**: Complete, reviewable deliverable. ✅
+
+---
+
+## Design Notes & Deviations from Plan
+
+1. **Single-file RTL** — all sub-modules (fifo_mem, wptr_full, rptr_empty, sync_r2w,
+   sync_w2r) are implemented inline in `async_fifo.sv` rather than as separate files.
+   This keeps the design self-contained and simplifies integration.
+
+2. **ASYNC_REG attributes** — added `(* ASYNC_REG = "TRUE" *)` to all synchronizer
+   registers during MS4 to satisfy Vivado CDC checks.
+
+3. **Async read port** — the memory read port is combinational (`assign q = mem[raddr]`),
+   matching the testbench's FWFT-style read protocol where `q` is sampled before
+   `rdreq` is asserted.
+
+4. **Synthesis results** — the design uses distributed RAM (LUTRAMs) at default
+   parameters. For larger ADDRWIDTH values, Vivado will automatically infer BRAM.
 
 ---
 
@@ -303,4 +321,5 @@ Reports: `reports/rtl_drc.rpt`, `reports/cdc_report.rpt`, `reports/synth_utiliza
 - **Almost-full / almost-empty flags**: programmable thresholds for flow control.
 - **FIFO occupancy count**: approximate word count (inherently imprecise across domains).
 - **First-word-fall-through (FWFT)**: data appears on `q` before `rdreq` is asserted.
+- **ECC protection**: error correction on the memory for high-reliability applications.
 - **ECC protection**: error correction on the memory for high-reliability applications.
