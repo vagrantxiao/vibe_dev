@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "regress-1GB-len0x400",
+			"type": "shell",
+			"command": "source /tools/Xilinx/Vivado/2022.2/settings64.sh && make",
+			"problemMatcher": []
+		}
+	]
+}

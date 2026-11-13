@@ -1,0 +1,11 @@
+../hdl/ydma.v
+../hdl/skid_buffer.sv
+../hdl/axi4_ar.sv
+../hdl/axi4_r.sv
+../hdl/axi4_aw.sv
+../hdl/axi4_w.sv
+../hdl/fifo_stream_in.v
+../hdl/fifo_stream_out.v
+../hdl/SynFIFO.v
+../hdl/toggle_detect.v
+../verif/tb_top.sv
